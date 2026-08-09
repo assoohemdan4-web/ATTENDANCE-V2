@@ -41,9 +41,15 @@
   }
 
   function renderEmployee(code) {
-    if (!DATA || !code || !DATA.cycle) return;
+    if (!DATA || !code || !DATA.cycle) {
+      exportEmployeeExcelBtn.disabled = true;
+      return;
+    }
     const employee = DATA.employees.find(e => String(e.code) === String(code));
-    if (!employee) return;
+    if (!employee) {
+      exportEmployeeExcelBtn.disabled = true;
+      return;
+    }
 
     const rows = AttendanceEngine.analyzeEmployee(employee, DATA);
     const s = AttendanceEngine.summary(rows);
