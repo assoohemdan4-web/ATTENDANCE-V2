@@ -8,6 +8,8 @@
   const employeeSelect = $("employeeSelect");
   const cycleMonth = $("cycleMonth");
   const applyCycleBtn = $("applyCycleBtn");
+  const exportEmployeeExcelBtn = $("exportEmployeeExcelBtn");
+  const exportAllExcelBtn = $("exportAllExcelBtn");
 
   $("logoutBtn").onclick = () => {
     sessionStorage.clear();
@@ -46,6 +48,8 @@
     const rows = AttendanceEngine.analyzeEmployee(employee, DATA);
     const s = AttendanceEngine.summary(rows);
 
+    exportEmployeeExcelBtn.disabled = false;
+
     $("employeeSummary").innerHTML = `
       <div class="mini"><span>Name</span><strong>${esc(employee.name)}</strong></div>
       <div class="mini"><span>Code</span><strong>${employee.code}</strong></div>
@@ -57,21 +61,26 @@
       <div class="mini"><span>Total OT</span><strong>${AttendanceEngine.fmtMinutes(s.earlyOT+s.lateOT)}</strong></div>
     `;
 
-    $("attendanceTable").querySelector("tbody").innerHTML = rows.map(r => `
-      <tr class="${r.review ? "review-row" : ""}">
-        <td>${r.date}</td>
-        <td>${esc(r.day)}</td>
-        <td>${r.first || "—"}</td>
-        <td>${r.last || "—"}</td>
-        <td>${r.scheduledIn}–${r.scheduledOut}</td>
-        <td>${AttendanceEngine.fmtMinutes(r.late) || "—"}</td>
-        <td>${AttendanceEngine.fmtMinutes(r.earlyLeave) || "—"}</td>
-        <td>${AttendanceEngine.fmtMinutes(r.earlyOT) || "—"}</td>
-        <td>${AttendanceEngine.fmtMinutes(r.lateOT) || "—"}</td>
-        <td><span class="status">${esc(r.status)}</span></td>
-        <td>${r.review ? `<button class="tiny" data-review="${r.code}|${r.date}">Decide</button>` : "—"}</td>
-      </tr>
-    `).join("");
+    $("attendanceTable").querySelector("tbody").innerHTML = rows.map(r => {
+      const decisionKey = cycleDecisionKey(r.code, r.date);
+      const displayStatus = decisions[decisionKey] || r.status;
+
+      return `
+        <tr class="${r.review ? "review-row" : ""}">
+          <td>${r.date}</td>
+          <td>${esc(r.day)}</td>
+          <td>${r.first || "—"}</td>
+          <td>${r.last || "—"}</td>
+          <td>${r.scheduledIn}–${r.scheduledOut}</td>
+          <td>${AttendanceEngine.fmtMinutes(r.late) || "—"}</td>
+          <td>${AttendanceEngine.fmtMinutes(r.earlyLeave) || "—"}</td>
+          <td>${AttendanceEngine.fmtMinutes(r.earlyOT) || "—"}</td>
+          <td>${AttendanceEngine.fmtMinutes(r.lateOT) || "—"}</td>
+          <td><span class="status">${esc(displayStatus)}</span></td>
+          <td>${r.review ? `<button class="tiny" data-review="${r.code}|${r.date}">Decide</button>` : "—"}</td>
+        </tr>
+      `;
+    }).join("");
 
     $("attendanceTable").querySelectorAll("[data-review]").forEach(btn => {
       btn.onclick = () => reviewItem(btn.dataset.review);
@@ -112,6 +121,61 @@
     $("reviewTable").querySelectorAll("[data-review]").forEach(btn => btn.onclick = () => reviewItem(btn.dataset.review));
   }
 
+  function exportEmployeeExcel() {
+    const code = employeeSelect.value;
+    if (!DATA || !code || !DATA.cycle) return;
+    const employee = DATA.employees.find(e => String(e.code) === String(code));
+    const rows = AttendanceEngine.analyzeEmployee(employee, DATA);
+
+    const exportData = rows.map(r => {
+      const decisionKey = cycleDecisionKey(r.code, r.date);
+      return {
+        "Date": r.date,
+        "Day": r.day,
+        "First Punch": r.first || "-",
+        "Last Punch": r.last || "-",
+        "Scheduled": `${r.scheduledIn}-${r.scheduledOut}`,
+        "Late": AttendanceEngine.fmtMinutes(r.late) || "00:00",
+        "Early Leave": AttendanceEngine.fmtMinutes(r.earlyLeave) || "00:00",
+        "Early OT": AttendanceEngine.fmtMinutes(r.earlyOT) || "00:00",
+        "Late OT": AttendanceEngine.fmtMinutes(r.lateOT) || "00:00",
+        "Status": decisions[decisionKey] || r.status
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Attendance Report");
+    XLSX.writeFile(wb, `Attendance_${employee.code}_${DATA.cycle.monthValue}.xlsx`);
+  }
+
+  function exportAllSummaryExcel() {
+    if (!DATA || !DATA.cycle) return;
+
+    const summaryRows = DATA.employees.map(emp => {
+      const rows = AttendanceEngine.analyzeEmployee(emp, DATA);
+      const s = AttendanceEngine.summary(rows);
+
+      return {
+        "Code": emp.code,
+        "Name": emp.name,
+        "Job": emp.job,
+        "Department": emp.department,
+        "Present Days": s.present,
+        "Review Days": s.review,
+        "Missing Punch": s.missing,
+        "Total Late": AttendanceEngine.fmtMinutes(s.late),
+        "Total Early Leave": AttendanceEngine.fmtMinutes(s.earlyLeave),
+        "Total Overtime": AttendanceEngine.fmtMinutes(s.earlyOT + s.lateOT)
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(summaryRows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Monthly Summary");
+    XLSX.writeFile(wb, `Attendance_Summary_${DATA.cycle.monthValue}.xlsx`);
+  }
+
   function setCycle(monthValue) {
     if (!DATA || !monthValue) return;
     const cycle = AttendanceEngine.createCycle(monthValue);
@@ -123,6 +187,8 @@
     $("kpiPunches").textContent = cyclePunchCount();
     $("kpiMissing").textContent = 0;
     $("engineStatus").textContent = "Cycle applied";
+    exportAllExcelBtn.disabled = false;
+
     renderEmployee(employeeSelect.value);
     renderReviewQueue();
 
@@ -182,6 +248,9 @@
   }
 
   applyCycleBtn.onclick = () => setCycle(cycleMonth.value);
+  exportEmployeeExcelBtn.onclick = exportEmployeeExcel;
+  exportAllExcelBtn.onclick = exportAllSummaryExcel;
+
   cycleMonth.addEventListener("change", () => {
     if (DATA) setCycle(cycleMonth.value);
   });
