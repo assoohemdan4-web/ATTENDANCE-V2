@@ -42,19 +42,19 @@
 
   function renderEmployee(code) {
     if (!DATA || !code || !DATA.cycle) {
-      exportEmployeeExcelBtn.disabled = true;
+      if (exportEmployeeExcelBtn) exportEmployeeExcelBtn.disabled = true;
       return;
     }
     const employee = DATA.employees.find(e => String(e.code) === String(code));
     if (!employee) {
-      exportEmployeeExcelBtn.disabled = true;
+      if (exportEmployeeExcelBtn) exportEmployeeExcelBtn.disabled = true;
       return;
     }
 
     const rows = AttendanceEngine.analyzeEmployee(employee, DATA);
     const s = AttendanceEngine.summary(rows);
 
-    exportEmployeeExcelBtn.disabled = false;
+    if (exportEmployeeExcelBtn) exportEmployeeExcelBtn.disabled = false;
 
     $("employeeSummary").innerHTML = `
       <div class="mini"><span>Name</span><strong>${esc(employee.name)}</strong></div>
@@ -193,11 +193,12 @@
     $("kpiPunches").textContent = cyclePunchCount();
     $("kpiMissing").textContent = 0;
     $("engineStatus").textContent = "Cycle applied";
-    exportAllExcelBtn.disabled = false;
+    if (exportAllExcelBtn) exportAllExcelBtn.disabled = false;
 
     renderEmployee(employeeSelect.value);
     renderReviewQueue();
 
+    // 1. حفظ التقارير محلياً في المتصفح
     const reports = {};
     for (const emp of DATA.employees) {
       reports[String(emp.code)] = {
@@ -213,6 +214,20 @@
       startKey: cycle.startKey,
       endKey: cycle.endKey
     }));
+
+    // 2. رفع البيانات سحابياً إلى Google Sheets عبر الـ Web App API
+    if (window.ATTENDANCE_CONFIG?.googleSheetApiUrl) {
+      fetch(window.ATTENDANCE_CONFIG.googleSheetApiUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "saveReports", reports: reports })
+      }).then(() => {
+        console.log("Uploaded to Google Sheets successfully");
+      }).catch(err => {
+        console.error("Cloud upload error:", err);
+      });
+    }
   }
 
   function setCycleCandidates() {
@@ -254,8 +269,8 @@
   }
 
   applyCycleBtn.onclick = () => setCycle(cycleMonth.value);
-  exportEmployeeExcelBtn.onclick = exportEmployeeExcel;
-  exportAllExcelBtn.onclick = exportAllSummaryExcel;
+  if (exportEmployeeExcelBtn) exportEmployeeExcelBtn.onclick = exportEmployeeExcel;
+  if (exportAllExcelBtn) exportAllExcelBtn.onclick = exportAllSummaryExcel;
 
   cycleMonth.addEventListener("change", () => {
     if (DATA) setCycle(cycleMonth.value);
