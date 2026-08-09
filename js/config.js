@@ -1,7 +1,7 @@
 window.ATTENDANCE_CONFIG = {
   auth: {
     accountantUsername: "accountant",
-    accountantPassword: "1234",
+    accountantPassword: "yasser162003", // الباسورد الجديد للمحاسب
     employeePasswords: {
       "7636": "1234"
     }
