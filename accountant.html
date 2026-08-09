@@ -9,7 +9,10 @@
 <body>
 <header class="topbar">
   <div><span class="brand-mark small">SA</span><strong>Site Attendance</strong></div>
-  <div class="top-actions"><span id="cycleBadge" class="badge">No file loaded</span><button id="logoutBtn" class="ghost">Logout</button></div>
+  <div class="top-actions">
+    <span id="cycleBadge" class="badge">No file loaded</span>
+    <button id="logoutBtn" class="ghost">Logout</button>
+  </div>
 </header>
 
 <main class="container">
@@ -57,7 +60,11 @@
   <section class="panel">
     <div class="panel-head">
       <div><h2>3. Employee report</h2><p class="muted">Select an employee to calculate the cycle from raw punches.</p></div>
-      <select id="employeeSelect" class="wide-select"><option value="">Import a file first</option></select>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button id="exportEmployeeExcelBtn" class="secondary tiny" disabled>Export Employee Excel</button>
+        <button id="exportAllExcelBtn" class="primary tiny" disabled>Export All Summary Excel</button>
+        <select id="employeeSelect" class="wide-select"><option value="">Import a file first</option></select>
+      </div>
     </div>
     <div id="employeeSummary" class="summary-grid"></div>
     <div class="table-wrap">
