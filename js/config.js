@@ -1,7 +1,10 @@
 window.ATTENDANCE_CONFIG = {
+  // ضع رابط الـ Web App الخاص بك هنا
+  googleSheetApiUrl: "https://script.google.com/macros/s/AKfycby3XMs-xQajGD1ndZor7YPIZGkXNOojhO912cW0aNEXkNY4-dRguDhPbMncxOoG-rtA/exec",
+
   auth: {
     accountantUsername: "accountant",
-    accountantPassword: "yasser162003", // الباسورد الجديد للمحاسب
+    accountantPassword: "yasser162003",
     employeePasswords: {
       "7636": "1234"
     }
