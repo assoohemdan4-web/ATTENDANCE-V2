@@ -59,12 +59,17 @@
 
   <section class="panel">
     <div class="panel-head">
-      <div><h2>3. Employee report</h2><p class="muted">Select an employee to calculate the cycle from raw punches.</p></div>
-      <div style="display:flex; gap:10px; align-items:center;">
-        <button id="exportEmployeeExcelBtn" class="secondary tiny" disabled>Export Employee Excel</button>
-        <button id="exportAllExcelBtn" class="primary tiny" disabled>Export All Summary Excel</button>
-        <select id="employeeSelect" class="wide-select"><option value="">Import a file first</option></select>
+      <div>
+        <h2>3. Employee report</h2>
+        <p class="muted">Select an employee to calculate the cycle from raw punches.</p>
       </div>
+      <div class="export-actions">
+        <button id="exportEmployeeExcelBtn" class="secondary" disabled>Export Employee Excel</button>
+        <button id="exportAllExcelBtn" class="primary" disabled>Export All Summary Excel</button>
+      </div>
+    </div>
+    <div style="margin-top: 16px;">
+      <select id="employeeSelect" class="wide-select"><option value="">Import a file first</option></select>
     </div>
     <div id="employeeSummary" class="summary-grid"></div>
     <div class="table-wrap">
